@@ -42,6 +42,7 @@ public class MyGdxGame extends ApplicationAdapter {
 	private Sound coinDropSound;
 
 	private BitmapFont scoreBitmapFont; //แสดงคะแนน
+	private int scoreAnInt=0; //รวมคะแนน
 
 	@Override
 	public void create() {
@@ -90,6 +91,8 @@ public class MyGdxGame extends ApplicationAdapter {
 
 		//Setup scoreBitMapFont
 		scoreBitmapFont = new BitmapFont();
+		scoreBitmapFont.setColor(Color.BLUE); //กำหนดสี
+		scoreBitmapFont.setScale(4);          //กำหนดขนาดการแสดงผล
 
 	}// create เอาไว้กำหนดค่า
 
@@ -134,6 +137,11 @@ public class MyGdxGame extends ApplicationAdapter {
 		for (Rectangle forCoins : coinsArray) {
 			batch.draw(coinsTexture,forCoins.x,forCoins.y);
 		}
+
+		//Drawable Score
+		scoreBitmapFont.draw(batch,"Score = " + Integer.toString(scoreAnInt),800,750);
+		//แปลงค่าข้อความเป็นตัวเลข toString(sccoreAnInt)
+		//แสดงข้อความที่ระดับความสูงเดียวกับคำว่า Coin PBRU ที่ 750
 
 			batch.end();
 		movecloud();
