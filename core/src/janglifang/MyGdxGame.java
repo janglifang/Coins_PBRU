@@ -37,6 +37,12 @@ public class MyGdxGame extends ApplicationAdapter {
 	private long lastDropCoins; //สุ่มจากตำแหน่งสุดท้าย ที่ไม่ตรงกับตำแหน่งเดิม
 	private Iterator<Rectangle> coinsIterator; // java.util
 
+	private Sound waterDropSound; //ไฟล์เสียงเมื่อเหรียญตกลงถึงพื้น
+
+	private Sound coinDropSound;
+
+	private BitmapFont scoreBitmapFont; //แสดงคะแนน
+
 	@Override
 	public void create() {
 		batch = new SpriteBatch();
@@ -75,6 +81,15 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Create coinsArray
 		coinsArray = new Array<Rectangle>();
 		coinsRandomDrop(); //สุ่มหาตำแหน่งจาก 1-1200 จุด ของหน้าจอ
+
+		//Setup WaterDrop
+		waterDropSound = Gdx.audio.newSound(Gdx.files.internal("water_drop.wav"));
+
+		//Set Coins Drop
+		coinDropSound = Gdx.audio.newSound(Gdx.files.internal("coins_drop.wav"));
+
+		//Setup scoreBitMapFont
+		scoreBitmapFont = new BitmapFont();
 
 	}// create เอาไว้กำหนดค่า
 
@@ -148,9 +163,19 @@ public class MyGdxGame extends ApplicationAdapter {
 
 			//When Coins into Floor เมื่อเหรียญหย่อนลงถึงพื้นแล้วให้ล้างหน่วยความจำใหม่
 			if (myCoinsRectangle.y +64 <0) {
+				waterDropSound.play();    //เล่นไฟล์เสียง water_drop.wav
 				coinsIterator.remove();
+			}//if
+
+			//WhenCoins OverLap Pig  เหรียญตรงกับหมู
+			if (myCoinsRectangle.overlaps(pigRectangle)) {
+				coinDropSound.play();
+				coinsIterator.remove(); //เหรียญหายไป
 			}
-		}
+
+
+		}// While Loop
+
 
 	}//randomDropCoins
 
