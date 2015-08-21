@@ -9,9 +9,13 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.TimeUtils;
 
+import java.util.Iterator;
 import java.util.Vector;
 
 public class MyGdxGame extends ApplicationAdapter {
@@ -26,6 +30,13 @@ public class MyGdxGame extends ApplicationAdapter {
 	private Texture pigTexture;
 	private Vector3 objVector3; //ใช้เคลื่อนที่หมู
 	private Sound pigSound; //เสียงหมู
+	private Rectangle coinsRectangle;  // สร้างเหรียญ
+	private Texture coinsTexture;     //  สร้างเหรียญ
+
+	private Array<Rectangle> coinsArray;
+	private long lastDropCoins; //สุ่มจากตำแหน่งสุดท้าย ที่ไม่ตรงกับตำแหน่งเดิม
+	private Iterator<Rectangle> coinsIterator; // java.util
+
 	@Override
 	public void create() {
 		batch = new SpriteBatch();
@@ -58,8 +69,26 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Setup pig Sound
 		pigSound = Gdx.audio.newSound(Gdx.files.internal("pig.wav"));
 
+		//Setup Coins
+		coinsTexture = new Texture("coins.png");
+
+		//Create coinsArray
+		coinsArray = new Array<Rectangle>();
+		coinsRandomDrop(); //สุ่มหาตำแหน่งจาก 1-1200 จุด ของหน้าจอ
 
 	}// create เอาไว้กำหนดค่า
+
+	private void coinsRandomDrop() {
+		coinsRectangle = new Rectangle();  //เงาที่อยู่ใต้ภาพ
+		coinsRectangle.x = MathUtils.random(0, 1136);
+		//พิกัดของ x ที่นำมาให้ coinsRectangle 1200-64=1136 ทุก DataTimes ขยับจะได้ค่าที่สุ่มใหม่
+		coinsRectangle.y = 800;
+		//เหรียญตกจากด้านบน ทำให้กำหนด y คงที่ (ถ้าต้องการให้เหรียญมาจากด้านอื่น ก็ขยับ y
+		coinsRectangle.width = 64;
+		coinsRectangle.height = 64;
+		coinsArray.add(coinsRectangle);
+		lastDropCoins = TimeUtils.nanoTime(); //ถ้ามีการดรอบเหรียญได้ค่าเดิมจะไม่ดรอบเหรียญ คือไม่ชนตำแหน่งกัน
+	}//coinsRandomDrop
 
 	@Override
 	public void render() {
@@ -86,13 +115,44 @@ public class MyGdxGame extends ApplicationAdapter {
 		//Drawable Pig
 		batch.draw(pigTexture, pigRectangle.x, pigRectangle.y);
 
-		batch.end();
+		//Drawable coins
+		for (Rectangle forCoins : coinsArray) {
+			batch.draw(coinsTexture,forCoins.x,forCoins.y);
+		}
+
+			batch.end();
 		movecloud();
 
 		//Active when Touch Screen เมื่อนิ้วโดนจอภาพให้ทำงาน
 		activeTouchScreen();
 
+		//Random Drop Coins การสุ่มการหย่อนเหรียญลงมา
+		randomDropCoins();
+
+
+
 	}// render ตัวนี้คือ Loop
+
+	private void randomDropCoins() {
+		if (TimeUtils.nanoTime()-lastDropCoins > 1E9) //สุ่มตัวเลขทุก 1 วินาที
+		// > 1E9 คือ มีค่ามากกว่า 10 ยกกำลัง 9
+		{
+			coinsRandomDrop();
+		}
+		coinsIterator = coinsArray.iterator();
+		while (coinsIterator.hasNext()) //ค่าของการหย่อนเหรียญไม่สิ้นสุด ให้หย่อนเหรีญไปเลี่อยๆ
+		{
+			Rectangle myCoinsRectangle = coinsIterator.next();
+			myCoinsRectangle.y -= 50 * Gdx.graphics.getDeltaTime();
+			// ตัวแปรที่โชว์เหรียญ y ค่า y ที่เปลี่ยน ด้วยความเร็ว -50
+
+			//When Coins into Floor เมื่อเหรียญหย่อนลงถึงพื้นแล้วให้ล้างหน่วยความจำใหม่
+			if (myCoinsRectangle.y +64 <0) {
+				coinsIterator.remove();
+			}
+		}
+
+	}//randomDropCoins
 
 	private void activeTouchScreen() {
 		//if (Gdx.input.isTouched()) {     //เมื่อมีการคลิก
@@ -114,7 +174,9 @@ public class MyGdxGame extends ApplicationAdapter {
 			objVector3 = new Vector3();  //เก็บค่าที่นิ้วไปโดนจอ  x , y
 			objVector3.set(Gdx.input.getX(), Gdx.input.getY(), 0);
 
-			if (objVector3.x < 600) {        //มีค่าน้อยกว่าจุดกึ่งกลางจอ
+			//if (objVector3.x < 600) {        //มีค่าน้อยกว่าจุดกึ่งกลางจอ  กรณ๊นี้กำหนดค่าตายตัวของกึ่งกลางจอเอง
+			if (objVector3.x < Gdx.graphics.getWidth() / 2) //กรณีนี้หาค่ากึ่งกลางได้แม้นย่ำกว่า
+			{
 				if (objVector3.x < 0) {
 					pigRectangle.x = 0;
 				} else {
